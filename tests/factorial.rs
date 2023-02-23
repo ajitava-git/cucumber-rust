@@ -18,16 +18,13 @@ async fn open_website(w: &mut World) {
 #[when(expr = "{word} checks the page title as Factorial")]
 async fn check_page_title(w: &mut World, Factorial: String) {
     sleep(Duration::from_secs(2)).await;
-
+    
 let info = Webpage::from_url("https://qainterview.pythonanywhere.com/", WebpageOptions::default())
     .expect("Could not read from URL");
-
 let html = info.html;
-
 w.Factorial = Some("Factorial".to_string());
 
 assert_eq!(html.title.as_ref().unwrap(), w.Factorial.as_ref().unwrap());
-
 }
 
 #[then("user close the browser")]
@@ -44,7 +41,6 @@ async fn close_browser(w: &mut World) {
             .expect("failed to execute process");
     }
 }
-
 
 #[tokio::main]
 async fn main() {

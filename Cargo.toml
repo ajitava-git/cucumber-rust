@@ -14,7 +14,7 @@ open = "3.2.0"
 webpage = "1.5.0"
 
 [[test]]
-name = "example" # this should be the same as the filename of your test target
+name = "factorial" # this should be the same as the filename of your test target
 harness = false  # allows Cucumber to print output instead of libtest
 
 
