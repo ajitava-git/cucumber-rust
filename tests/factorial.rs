@@ -44,5 +44,5 @@ async fn close_browser(w: &mut World) {
 
 #[tokio::main]
 async fn main() {
-    World::run("tests/features/book").await;
+    World::run("tests/features/book/factorial.feature").await;
 }
