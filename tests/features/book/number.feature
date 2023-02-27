@@ -1,9 +1,9 @@
 Feature: Bug Hunting in Factorial Website
 
   Scenario Outline: Verify the factorial of a number
-    Given I enter <number> in the input box
-    When I click submit
-    Then I check that the answer is <answer>
+    Given I enter "<number>" in the input box
+    When I click calculate
+    Then I check the "<answer>"
 
   Examples: 
     | number | answer |
