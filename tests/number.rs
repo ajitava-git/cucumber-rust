@@ -23,10 +23,13 @@ struct World {
     pub answer: u32,
 }
 
-#[given(regex = r#"^I enter "(.+)" in the input box"#)]
+#[given(expr = "I enter {word} in the input box")]
 async fn enter_number(w: &mut World, number_str: String) -> WebDriverResult<()> {
     let number = number_str.parse::<u32>().unwrap();
-    let driver = unsafe { DRIVER.as_ref().unwrap() };
+    let caps = DesiredCapabilities::chrome();
+    let driver = WebDriver::new("http://localhost:9515", caps).await?;
+    driver.goto("https://qainterview.pythonanywhere.com/").await?;
+    println!("Did unwrap works? {}", number);
     sleep(Duration::from_secs(2)).await;
     let elem_form = driver.find(By::ClassName("input-group")).await?;
     let elem_text = elem_form.find(By::Id("number")).await?;
@@ -59,20 +62,8 @@ async fn check_factorial(w: &mut World, answer_str: String) -> WebDriverResult<(
 }
 
 #[tokio::main]
-async fn main() {  
-    url_navigation().await.unwrap();
-    let factorial = vec! [
-        ("2", "2"),
-        ("3", "6"),
-        ("4", "24"),
-        ("5", "120")
-    ];
-    for (number, answer) in factorial {
-        let mut world = World::default();
-        enter_number(&mut world, number.to_string()).await.unwrap();
-        click_caclculate(&mut world).await.unwrap();
-        check_factorial(&mut world, answer.to_string()).await.unwrap();
-    }
+async fn main() {
+    World::run("tests/features/book/number.feature").await;
 }
 
 
