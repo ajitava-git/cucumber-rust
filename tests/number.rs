@@ -48,25 +48,30 @@ async fn click_caclculate(w: &mut World) -> WebDriverResult<()> {
 async fn check_factorial(w: &mut World, answer_str: String) -> WebDriverResult<()> {
     let driver = unsafe { DRIVER.as_ref().unwrap() };
     sleep(Duration::from_secs(2)).await;  
-    let expected_answer = answer_str.parse::<u32>().unwrap();
-    println!("{:?}", expected_answer);
+    let actual_answer = answer_str.parse::<u32>().unwrap();
     let factorial_res = driver.find(By::Id("resultDiv")).await?;
-    assert_eq!(factorial_res.text().await?, expected_answer.to_string());
+    let prefix = factorial_res.text().await?;
+    let expected_answer: Vec<&str> = prefix.split_whitespace().collect();
+    assert_eq!(expected_answer[5], actual_answer.to_string());
+    w.answer = actual_answer;
+    driver.refresh().await?;
     Ok(())
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() {  
     url_navigation().await.unwrap();
-    for number in 2..6 {
+    let factorial = vec! [
+        ("2", "2"),
+        ("3", "6"),
+        ("4", "24"),
+        ("5", "120")
+    ];
+    for (number, answer) in factorial {
         let mut world = World::default();
-        world.number = number;
         enter_number(&mut world, number.to_string()).await.unwrap();
         click_caclculate(&mut world).await.unwrap();
-        let answer_store = [2,6,24,120];
-        for answer in answer_store {check_factorial(&mut world, answer.to_string()).await.unwrap();}
-        //let answer_str = world.answer.to_string();
-        //check_factorial(&mut world, answer_str).await.unwrap();
+        check_factorial(&mut world, answer.to_string()).await.unwrap();
     }
 }
 
