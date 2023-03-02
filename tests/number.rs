@@ -1,63 +1,60 @@
 use std::time::Duration;
 use cucumber::{given, then, when, World as _};
 use tokio::time::sleep;
-use webpage::{Webpage, WebpageOptions};
-use std::process::Command;
 use thirtyfour::prelude::*;
+use std::fmt;
 
-static mut DRIVER: Option<WebDriver> = None;
+//Define a struct with driver
+#[derive(cucumber::World, Default)]
+struct World {
+    pub driver: Option<WebDriver>,
+}
 
-pub async fn url_navigation() -> WebDriverResult<()> {
+//Implementing Debug for World Struct
+impl fmt::Debug for World {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("World")
+            .field("driver", &self.driver.as_ref().map(|_| "<WebDriver>"))
+            .finish()
+    }
+}
+
+//Initializing the driver
+#[given(expr = "I enter {word} in the input box")]
+async fn enter_number(world: &mut World, number_str: String) -> WebDriverResult<()> {
     let caps = DesiredCapabilities::chrome();
     let driver = WebDriver::new("http://localhost:9515", caps).await?;
+    let number = number_str.parse::<u32>().unwrap();
     driver.goto("https://qainterview.pythonanywhere.com/").await?;
     driver.maximize_window().await?;
-    sleep(Duration::from_secs(5)).await;
-    unsafe { DRIVER = Some(driver) };
-    Ok(())
-}
-
-#[derive(cucumber::World, Debug, Default)]
-struct World {
-    pub number: u32,
-    pub answer: u32,
-}
-
-#[given(expr = "I enter {word} in the input box")]
-async fn enter_number(w: &mut World, number_str: String) -> WebDriverResult<()> {
-    let number = number_str.parse::<u32>().unwrap();
-    let caps = DesiredCapabilities::chrome();
-    let driver = WebDriver::new("http://localhost:9515", caps).await?;
-    driver.goto("https://qainterview.pythonanywhere.com/").await?;
-    println!("Did unwrap works? {}", number);
-    sleep(Duration::from_secs(2)).await;
+    sleep(Duration::from_secs(5)).await;   
     let elem_form = driver.find(By::ClassName("input-group")).await?;
     let elem_text = elem_form.find(By::Id("number")).await?;
     elem_text.send_keys(number.to_string()).await?;
-    w.number=number;
+    world.driver=Some(driver);
     Ok(())
 }
 
+//Using the driver to click calculate for factorial
 #[when("I click calculate")]
-async fn click_caclculate(w: &mut World) -> WebDriverResult<()> {
-    let driver = unsafe { DRIVER.as_ref().unwrap() };
+async fn click_caclculate(world: &mut World) -> WebDriverResult<()> {
+    let driver = world.driver.as_ref().unwrap();
     sleep(Duration::from_secs(2)).await;
     let calc_button = driver.find(By::Id("getFactorial")).await?;
     calc_button.click().await?;
     Ok(())
 }
 
-#[then(regex = r#"^I check the "(.+)""#)]
-async fn check_factorial(w: &mut World, answer_str: String) -> WebDriverResult<()> {
-    let driver = unsafe { DRIVER.as_ref().unwrap() };
+//Assert the factorial result with values from example
+#[then(expr = "I check the {word}")]
+async fn check_factorial(world: &mut World, answer_str: String) -> WebDriverResult<()> {
+    let driver = world.driver.as_ref().unwrap();
     sleep(Duration::from_secs(2)).await;  
-    let actual_answer = answer_str.parse::<u32>().unwrap();
+    let actual_answer = answer_str.parse::<u32>().unwrap(); 
     let factorial_res = driver.find(By::Id("resultDiv")).await?;
     let prefix = factorial_res.text().await?;
     let expected_answer: Vec<&str> = prefix.split_whitespace().collect();
     assert_eq!(expected_answer[5], actual_answer.to_string());
-    w.answer = actual_answer;
-    driver.refresh().await?;
     Ok(())
 }
 
@@ -65,6 +62,3 @@ async fn check_factorial(w: &mut World, answer_str: String) -> WebDriverResult<(
 async fn main() {
     World::run("tests/features/book/number.feature").await;
 }
-
-
-
